@@ -35,41 +35,6 @@ def merge_intervals_special(intervalsA: List[Tuple[int, int, int]], intervalsB: 
 
     return sorted(result, key=lambda x: x[0])
 
-def merge_intervals_special_old(intervalsA: List[Tuple[int, int, int]], intervalsB: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
-    """
-    Merge two lists of intervals. Intervals from intervalsB have priority over intervalsA in case of overlap.
-    Inclusive intervals are considered.
-    """
-    result = []
-    usedB = [False] * len(intervalsB)
-
-    for a_start, a_end, a_diff in intervalsA:
-        a_index = a_start
-        while a_index <= a_end:
-            overlap = False
-            for i, (b_start, b_end, b_diff) in enumerate(intervalsB):
-                if b_start <= a_index <= b_end:
-                    # Overlap found, use intervalsB's diff
-                    if not usedB[i]:
-                        result.append((max(a_index, b_start), b_end, b_diff))
-                        usedB[i] = True
-                    overlap = True
-                    a_index = b_end + 1
-                    break
-            
-            if not overlap:
-                # No overlap, use intervalsA's diff
-                next_b_start = min([b_start for b_start, _, _ in intervalsB if b_start > a_index], default=a_end + 1)
-                result.append((a_index, min(a_end, next_b_start - 1), a_diff))
-                a_index = next_b_start
-
-    # Add remaining intervalsB that have not been used
-    for i, (b_start, b_end, b_diff) in enumerate(intervalsB):
-        if not usedB[i]:
-            result.append((b_start, b_end, b_diff))
-
-    return sorted(result, key=lambda x: x[0])
-
 def merge_intervals(intervals: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
     """
     Merge overlapping intervals based on their start and end values, 
@@ -117,9 +82,6 @@ def generate_srcintervals_withdiff(line: List[int]) -> List[Tuple[int,int,int]]:
     diff = line[0] - line[1]
     return (start,end,diff)
 
-def calc_new_node_intervals(source_intervals_and_diff: List[Tuple[int,int,int]], node_intervals: List[Tuple[int,int]]) -> List[Tuple[int,int]]:
-    pass
-
 def convert_src_to_dest(intervals: List[Tuple[int,int,int]]) -> List[Tuple[int,int,int]]:
     res = []
     for start_src,end_src,diff in intervals:
@@ -165,13 +127,11 @@ try:
                         current_intervals_source_and_diff.sort(key=lambda V: V[0])
                         current_intervals_source_and_diff = merge_intervals(current_intervals_source_and_diff)
                         ic(current_intervals_source_and_diff)
-                        # node_intervals = calc_new_node_intervals(current_intervals_source_and_diff,node_intervals)
                         node_intervals = merge_intervals_special(node_intervals,current_intervals_source_and_diff)
                         ic(node_intervals)
                         node_intervals = convert_src_to_dest(node_intervals)
                         ic(node_intervals)
                         current_intervals_source_and_diff.clear()
-                        # exit()
                         break
                     this_interval = [int(x) for x in line.split()]
                     this_interval = generate_srcintervals_withdiff(this_interval)
@@ -184,9 +144,6 @@ try:
     ic(res)
     sol = find_res_min(res)
     ic(sol)
-
-
-                
                 
 except FileNotFoundError:
     print(f"file {f_name} not found")
@@ -229,4 +186,29 @@ NEW PROBLEM:
 * we can't necessarily use the same logic, because even having a list of seeds would now be impossible as the lists would be 100 millions of numbers,
 * maybe generate all the intervals for every map, then turn seeds into intervals of seeds, and turn those intervals into intervals of intervals that
 fit into each mapping 
+
+XXX how i got it working XXX
+* turn the seeds into intervals, (start,end,diff) start and end is inclusive, and diff is how we will calculate traversal to the next node
+    * later i'm going to call seed_intervals node_intervals because it makes more sense, like we are traversing a graph that
+        starts at the seed values in the beginning and ending at the locations at the end, so node_intervals will change as we go
+        through the graph
+    * we initialize diff as zero for all the seeds cus if it does not fit into any of the intervals then node_dest = node_src
+* next we start iterating through the file, for each map, we create a new map of intervals (start_src,end_src,diff)
+    * now diff is going to hold a value that will later let us traverse from the src node to the destination node
+* now we use our special merging function to merge node_intervals with the map_intervals
+    * special bcs there are additional criteria, the criteria:
+        * if node_intervals within map_intervals, then node_intervals[2] aka its diff equals map_intervals[2], we inherit diff from the mapping it fell within
+        * if node_intervals NOT within map_intervals, then node_intervals[2] = 0, because its' dest. will be equal to source
+        * for all the other values, that are in map_intervals but not node_intervals we drop it, because those values don't correspond
+            to any of the beginning seeds
+* After that merge, we now have a new node_intervals, this is still (start,end,diff) but now all of the intervals that fell
+    within the mapping have the diff that corresponds
+* next we can finally traverse the graph! we do this by changing node_intervals to (start + diff, end + diff, 0)
+    * we change start of interval to its corresponding destination, and same for end, reset the diff to zero, because once we start looking at the next
+        mapping, if we dont find anything we want source = destination
+* repeat this and at the end we get node_intervals = (location_start,location_end,0) and we can just take the min start_location we come across
+    * at the very end we just have an interval of the location where the location was calculated just like all the other node traversals, so the start
+        will be less than the end of the interval and we can just take the smallest value, because we drop all parts of intervals that don't contain
+        a value from the starting seeds and continue to do so, we never have any node_interval values that contain values outside of the interval,
+        thus, at the end, we know the min_start is the min location that was possible to create
 """
