@@ -1,6 +1,7 @@
 from icecream import ic
 import re
 from typing import Set,Optional,List,Tuple
+from time import perf_counter
 
 def clean_line(line: str) -> Tuple[int,int,int]:
     res = (int(x) for x in line.split())
@@ -100,53 +101,60 @@ def find_res_min(res: Tuple[int,int]) -> int:
             sol = b
     return sol
 
-f_name = "day5in.txt"
-node_intervals = []
-locations = []
-current_intervals_source_and_diff : List[Tuple[int,int,int]] = [] #will be like so -> [(startsource,endsource,difference)] difference = destination-source
+
+if __name__ == '__main__':
+    start_time = perf_counter()
+
+    f_name = "day5in.txt"
+    node_intervals = []
+    locations = []
+    current_intervals_source_and_diff : List[Tuple[int,int,int]] = [] #will be like so -> [(startsource,endsource,difference)] difference = destination-source
 
 
-try:
-    with open(f_name,'r') as file:
-        for line in file:
-            line = line.strip().split(':')[1]
-            node_intervals = [int(x) for x in line.split()]
-            node_intervals = get_seed_intervals(node_intervals)
-            node_intervals = standardize_intervals(node_intervals)
-            ic(node_intervals)
-            break
+    try:
+        with open(f_name,'r') as file:
+            for line in file:
+                line = line.strip().split(':')[1]
+                node_intervals = [int(x) for x in line.split()]
+                node_intervals = get_seed_intervals(node_intervals)
+                node_intervals = standardize_intervals(node_intervals)
+                # ic(node_intervals)
+                break
 
-        for line in file:
-            line = line.strip()
-            if line == '':
-                continue
-            if "map" in line: #then process all lines in current map
-                for line in file:
-                    line = line.strip()
-                    if line == '' or "end" in line:
-                        current_intervals_source_and_diff.sort(key=lambda V: V[0])
-                        current_intervals_source_and_diff = merge_intervals(current_intervals_source_and_diff)
-                        ic(current_intervals_source_and_diff)
-                        node_intervals = merge_intervals_special(node_intervals,current_intervals_source_and_diff)
-                        ic(node_intervals)
-                        node_intervals = convert_src_to_dest(node_intervals)
-                        ic(node_intervals)
-                        current_intervals_source_and_diff.clear()
-                        break
-                    this_interval = [int(x) for x in line.split()]
-                    this_interval = generate_srcintervals_withdiff(this_interval)
-                    current_intervals_source_and_diff.append(this_interval)
-        locations.append(node_intervals)
-        file.seek(0)
-    res = []
-    for node_str,node_end,diff in node_intervals:
-        res.append((node_str + diff,node_end + diff))
-    ic(res)
-    sol = find_res_min(res)
-    ic(sol)
-                
-except FileNotFoundError:
-    print(f"file {f_name} not found")
+            for line in file:
+                line = line.strip()
+                if line == '':
+                    continue
+                if "map" in line: #then process all lines in current map
+                    for line in file:
+                        line = line.strip()
+                        if line == '' or "end" in line:
+                            current_intervals_source_and_diff.sort(key=lambda V: V[0])
+                            current_intervals_source_and_diff = merge_intervals(current_intervals_source_and_diff)
+                            # ic(current_intervals_source_and_diff)
+                            node_intervals = merge_intervals_special(node_intervals,current_intervals_source_and_diff)
+                            # ic(node_intervals)
+                            node_intervals = convert_src_to_dest(node_intervals)
+                            # ic(node_intervals)
+                            current_intervals_source_and_diff.clear()
+                            break
+                        this_interval = [int(x) for x in line.split()]
+                        this_interval = generate_srcintervals_withdiff(this_interval)
+                        current_intervals_source_and_diff.append(this_interval)
+            locations.append(node_intervals)
+            file.seek(0)
+        res = []
+        for node_str,node_end,diff in node_intervals:
+            res.append((node_str + diff,node_end + diff))
+        # ic(res)
+        sol = find_res_min(res)
+        print(f"closest location = {sol}")
+                    
+    except FileNotFoundError:
+        print(f"file {f_name} not found")
+
+    end_time = perf_counter()
+    print(f"Execution time: {end_time-start_time} seconds")
 
 
 """
