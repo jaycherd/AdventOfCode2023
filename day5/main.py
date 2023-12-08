@@ -131,11 +131,11 @@ if __name__ == '__main__':
                         if line == '' or "end" in line:
                             current_intervals_source_and_diff.sort(key=lambda V: V[0])
                             current_intervals_source_and_diff = merge_intervals(current_intervals_source_and_diff)
-                            # ic(current_intervals_source_and_diff)
+                            ic(current_intervals_source_and_diff)
                             node_intervals = merge_intervals_special(node_intervals,current_intervals_source_and_diff)
-                            # ic(node_intervals)
+                            ic(node_intervals)
                             node_intervals = convert_src_to_dest(node_intervals)
-                            # ic(node_intervals)
+                            ic(node_intervals)
                             current_intervals_source_and_diff.clear()
                             break
                         this_interval = [int(x) for x in line.split()]
